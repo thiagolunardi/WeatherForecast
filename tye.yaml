@@ -1,0 +1,26 @@
+# tye application configuration file
+# read all about it at https://github.com/dotnet/tye
+#
+# when you've given us a try, we'd love to know what you think:
+#    https://aka.ms/AA7q20u
+#
+name: weatherforecast
+registry: descomplicandoacr.azurecr.io
+namespace: weatherforecast
+services:
+- name: frontend
+  project: src/frontend/frontend.csproj
+  bindings:
+  - port: 34200
+- name: backend
+  project: src/backend/backend.csproj
+  bindings:
+  - port: 34300
+- name: redis
+  image: redis
+  bindings:
+  - port: 6379
+    connectionString: "${host}:${port}" 
+- name: redis-cli
+  image: redis
+  args: "redis-cli -h redis MONITOR"
