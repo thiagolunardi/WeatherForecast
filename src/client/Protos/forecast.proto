@@ -1,0 +1,25 @@
+syntax = "proto3";
+ 
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "GrpcBackend";
+
+package forecast;
+
+// The greeting service definition.
+service Forecast {
+  // Sends a greeting
+  rpc Predict (WeatherRequest) returns (stream WeatherResponse);
+}
+
+// The request message with location
+message WeatherRequest {
+  string location = 1;
+}
+
+// The response message containing the forecast.
+message WeatherResponse {
+  google.protobuf.Timestamp date = 1;
+  int32 temperatureC = 2;  
+  string summary = 3;
+}

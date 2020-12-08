@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
+using GrpcBackend;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,10 +24,19 @@ namespace frontend
         {
             services.AddRazorPages();
 
-             services.AddHttpClient<WeatherClient>(client =>
+            services.AddSingleton<GrpcChannel>(provider =>
             {
-                client.BaseAddress = Configuration.GetServiceUri("backend");
+                var backendAddress = "http://localhost:34300";
+                return GrpcChannel.ForAddress(backendAddress);
             });
+
+            services.AddScoped<Forecast.ForecastClient>(provider => 
+            {
+                var channel = provider.GetService<GrpcChannel>();
+                return new Forecast.ForecastClient(channel);
+            });
+
+            services.AddScoped<WeatherClient>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,39 +65,5 @@ namespace frontend
                 endpoints.MapRazorPages();
             });
         }
-    }
-
-     public class WeatherClient
-     {
-         private readonly JsonSerializerOptions options = new JsonSerializerOptions()
-         {
-             PropertyNameCaseInsensitive = true,
-             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-         };
- 
-         private readonly HttpClient client;
- 
-         public WeatherClient(HttpClient client)
-         {
-             this.client = client;
-         }
- 
-         public async Task<WeatherForecast[]> GetWeatherAsync()
-         {
-             var responseMessage = await this.client.GetAsync("/weatherforecast");
-             var stream = await responseMessage.Content.ReadAsStreamAsync();
-             return await JsonSerializer.DeserializeAsync<WeatherForecast[]>(stream, options);
-         }
-     }
-
-     public class WeatherForecast
-    {
-        public DateTime Date { get; set; }
-
-        public int TemperatureC { get; set; }
-
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-
-        public string Summary { get; set; }
     }
 }

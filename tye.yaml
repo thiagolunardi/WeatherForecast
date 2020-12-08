@@ -5,7 +5,7 @@
 #    https://aka.ms/AA7q20u
 #
 name: weatherforecast
-registry: descomplicandoacr.azurecr.io
+registry: mvpconf.azurecr.io
 namespace: weatherforecast
 services:
 - name: frontend
@@ -16,11 +16,13 @@ services:
   project: src/backend/backend.csproj
   bindings:
   - port: 34300
-- name: redis
-  image: redis
+- name: mssql-server
+  image: mcr.microsoft.com/mssql/server:2019-latest
+  env:
+    - name: "MSSQL_SA_PASSWORD"
+      value: "!MySecretTemplafyPassword1"
+    - name: ACCEPT_EULA
+      value: "Y"
   bindings:
-  - port: 6379
-    connectionString: "${host}:${port}" 
-- name: redis-cli
-  image: redis
-  args: "redis-cli -h redis MONITOR"
+    - port: 1433
+      connectionString: "Server=${host},${port};Database=WeatherForecast;User Id=sa;Password=${env:MSSQL_SA_PASSWORD};TrustServerCertificate=False"
