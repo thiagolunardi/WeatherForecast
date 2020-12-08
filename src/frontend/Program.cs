@@ -1,26 +1,41 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using GrpcBackend;
+using Grpc.Net.Client;
 
 namespace frontend
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            var builder = WebAssemblyHostBuilder.CreateDefault(args);
+            builder.RootComponents.Add<App>("#app");
+
+            ConfigureServices(builder.Services);
+
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+            await builder.Build().RunAsync();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        public static void ConfigureServices(IServiceCollection services)
+        {
+            services.AddSingleton<GrpcChannel>(provider =>
+            {
+                var backendAddress = "http://localhost:34300";
+                return GrpcChannel.ForAddress(backendAddress);
+            });
+
+            services.AddScoped<Forecast.ForecastClient>(provider =>
+            {
+                var channel = provider.GetService<GrpcChannel>();
+                return new Forecast.ForecastClient(channel);
+            });
+
+            services.AddScoped<WeatherClient>();
+        }
     }
 }
